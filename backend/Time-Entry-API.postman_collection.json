@@ -1,0 +1,313 @@
+{
+  "info": {
+    "_postman_id": "your-collection-id",
+    "name": "Time Entry API",
+    "description": "API collection for Time Entry Realtime application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"your_username\",\n    \"password\": \"your_password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/login/",
+              "host": ["{{base_url}}"],
+              "path": ["login", ""]
+            },
+            "description": "Login to get authentication token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run AI",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"input\": \"your_input_data\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/run/",
+          "host": ["{{base_url}}"],
+          "path": ["run", ""]
+        },
+        "description": "Run AI processing on input data"
+      }
+    },
+    {
+      "name": "Persons",
+      "item": [
+        {
+          "name": "Get All Persons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/persons/",
+              "host": ["{{base_url}}"],
+              "path": ["persons", ""]
+            },
+            "description": "Get list of all persons with their images and visiting information"
+          }
+        },
+        {
+          "name": "Create Person",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"mobile_no\": \"+1234567890\",\n    \"gender\": \"Male\",\n    \"company\": \"Example Corp\",\n    \"id_no\": \"EMP123\",\n    \"email\": \"john@example.com\",\n    \"image\": \"base64_encoded_image_string\",\n    \"visiting_info\": {\n        \"card_no\": \"CARD123\",\n        \"visit_reason\": \"Meeting\",\n        \"visit_start_time\": \"2024-03-20T10:00:00Z\",\n        \"visit_end_time\": \"2024-03-20T11:00:00Z\",\n        \"visitor_group\": \"1\",\n        \"respondent\": \"Jane Smith\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/persons/",
+              "host": ["{{base_url}}"],
+              "path": ["persons", ""]
+            },
+            "description": "Create a new person with optional image and visiting information"
+          }
+        },
+        {
+          "name": "Get Person Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person/1/",
+              "host": ["{{base_url}}"],
+              "path": ["person", "1", ""]
+            },
+            "description": "Get details of a specific person"
+          }
+        },
+        {
+          "name": "Update Person",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Updated\",\n    \"email\": \"john.updated@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/person/1/",
+              "host": ["{{base_url}}"],
+              "path": ["person", "1", ""]
+            },
+            "description": "Update a person's details"
+          }
+        },
+        {
+          "name": "Delete Person",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person/1/",
+              "host": ["{{base_url}}"],
+              "path": ["person", "1", ""]
+            },
+            "description": "Delete a person"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cameras",
+      "item": [
+        {
+          "name": "Get All Cameras",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cameras/",
+              "host": ["{{base_url}}"],
+              "path": ["cameras", ""]
+            },
+            "description": "Get list of all cameras"
+          }
+        },
+        {
+          "name": "Create Camera",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Camera 1\",\n    \"location\": \"Entrance\",\n    \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/cameras/",
+              "host": ["{{base_url}}"],
+              "path": ["cameras", ""]
+            },
+            "description": "Create a new camera"
+          }
+        },
+        {
+          "name": "Get Camera Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/camera/1/",
+              "host": ["{{base_url}}"],
+              "path": ["camera", "1", ""]
+            },
+            "description": "Get details of a specific camera"
+          }
+        },
+        {
+          "name": "Update Camera",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Camera 1 Updated\",\n    \"location\": \"Main Entrance\",\n    \"status\": \"inactive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/camera/1/",
+              "host": ["{{base_url}}"],
+              "path": ["camera", "1", ""]
+            },
+            "description": "Update a camera's details"
+          }
+        },
+        {
+          "name": "Delete Camera",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/camera/1/",
+              "host": ["{{base_url}}"],
+              "path": ["camera", "1", ""]
+            },
+            "description": "Delete a camera"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-auth-token",
+      "type": "string"
+    }
+  ]
+}

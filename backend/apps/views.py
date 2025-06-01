@@ -7,7 +7,7 @@ from .services.main import run_ai_function
 from rest_framework import status
 from .serializers import PersonSerializer, CameraSerializer
 from .models import Person, Camera
-
+from .services.face_login.face_login import face_login
 
 
 class RunAIView(APIView):
@@ -101,3 +101,13 @@ class CameraDetailAPIView(APIView):
         camera = self.get_object(pk)
         camera.delete()
         return Response({'message': 'Camera deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    
+
+class FaceLoginAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = face_login()
+        print("data-in-face-login-view:",data)
+        return Response({'data': data})
+

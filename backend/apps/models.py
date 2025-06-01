@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 import base64
 from io import BytesIO
-# from .services.face_encoding.face import extract_face_encoding
+from .services.face_encoding.face import extract_face_encoding
 
 class Person(models.Model):
     name = models.CharField(max_length=100)
@@ -22,7 +22,7 @@ class PersonImage(models.Model):
     person = models.OneToOneField(Person, on_delete=models.CASCADE, related_name='image')
     image = models.ImageField(upload_to='person_image/')
     image_text = models.TextField(blank=True, null=True)  # new field to store base64 string
-    # face_encoding = models.TextField(blank=True, null=True) 
+    face_encoding = models.TextField(blank=True, null=True) 
     # created_at = models.DateTimeField(auto_now_add=True)
     # updated_at = models.DateTimeField(auto_now=True)
 
@@ -31,7 +31,7 @@ class PersonImage(models.Model):
             self.image.open()
             image_data = self.image.read()
             self.image_text = base64.b64encode(image_data).decode('utf-8')
-            # self.face_encoding = extract_face_encoding(image_data)
+            self.face_encoding = extract_face_encoding(image_data)
             # DON'T close the file here, leave it open for Django to handle
             # self.image.close()  <-- REMOVE THIS line
         super().save(*args, **kwargs)
@@ -58,6 +58,7 @@ class Camera(models.Model):
     cam_name = models.CharField(max_length=255)
     cam_password = models.CharField(max_length=255)
     cam_ip = models.GenericIPAddressField()
+    cam_port = models.PositiveIntegerField()
     cam_position = models.CharField(max_length=255)
 
     def __str__(self):
