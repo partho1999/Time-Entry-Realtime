@@ -29,8 +29,8 @@ def get_all_cameras():
             # print(f"IP Address: {camera.cam_ip}")
             # print(f"Position: {camera.cam_position}")
             # print("-" * 50)
-            key = f"cam{cam.cam_id}"
-            value = f"rtsp://{cam.cam_name}:{cam.cam_password}@{cam.cam_ip}:{cam.cam_port}/stream"
+            key = f"{cam.cam_id}"
+            value = f"rtsp://{cam.cam_name}:{cam.cam_password}@{cam.cam_ip}/channel=1/subtype=0"
             camera_dict[key] = value
         print("camera_dict:",camera_dict)
         return camera_dict

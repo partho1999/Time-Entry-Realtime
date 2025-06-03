@@ -7,7 +7,15 @@ from .services.main import run_ai_function
 from rest_framework import status
 from .serializers import PersonSerializer, CameraSerializer
 from .models import Person, Camera
-from .services.face_login.face_login import face_login
+# Face login shared imports
+from .services.face_login.face_login import (
+    start_all_camera_threads,
+    process_login,
+    camera_frames,
+    camera_locks
+)
+from .services.add_cam.add_cam import get_all_cameras
+import time
 
 
 class RunAIView(APIView):
@@ -107,7 +115,23 @@ class FaceLoginAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data = face_login()
-        print("data-in-face-login-view:",data)
-        return Response({'data': data})
+        start_all_camera_threads()
+        camera_urls = get_all_cameras()
+        results = []
+
+        try:
+            for cam_id in camera_urls:
+                frame = camera_frames.get(cam_id)
+                lock = camera_locks.get(cam_id)
+
+                if frame is not None and lock is not None:
+                    with lock:
+                        result = process_login(cam_id, frame)
+                        if result:
+                            print(f"[LOGIN] {result}")
+                            results.append(result)
+
+            return Response({"logins": results})
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
