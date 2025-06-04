@@ -4,9 +4,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .services.main import run_ai_function
+from django.utils.dateparse import parse_datetime
 from rest_framework import status
+from django.utils import timezone
 from .serializers import PersonSerializer, CameraSerializer
-from .models import Person, Camera
+from .models import Person, Camera, PersonVisiting
 # Face login shared imports
 from .services.face_login.face_login import (
     start_all_camera_threads,
@@ -57,11 +59,54 @@ class PersonDetailAPIView(APIView):
 
     def put(self, request, pk):
         person = self.get_object(pk)
-        serializer = PersonSerializer(person, data=request.data, partial=True, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Person updated successfully'})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # ----------- Step 1: Update Person fields -----------
+        person_fields = {}
+        person_field_names = ['name', 'mobile_no', 'gender', 'company', 'id_no', 'email']
+        
+        for field in person_field_names:
+            if field in request.data:
+                person_fields[field] = request.data[field]
+        
+        if person_fields:
+            serializer = PersonSerializer(person, data=person_fields, partial=True, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # ----------- Step 2: Update or create PersonVisiting fields -----------
+        visiting_fields = {}
+        visiting_field_names = ['visit_start_date', 'visit_end_date', 'visit_reason', 'card_no', 'visit_group', 'respondent']
+        
+        for field in visiting_field_names:
+            if field in request.data:
+                visiting_fields[field] = request.data[field]
+
+        if visiting_fields:
+            try:
+                # Optional: convert date/time strings if needed
+                if 'visit_start_date' in visiting_fields and isinstance(visiting_fields['visit_start_date'], str):
+                    visiting_fields['visit_start_date'] = parse_datetime(visiting_fields['visit_start_date'])
+                if 'visit_end_date' in visiting_fields and isinstance(visiting_fields['visit_end_date'], str):
+                    visiting_fields['visit_end_date'] = parse_datetime(visiting_fields['visit_end_date'])
+
+                # Try to get existing PersonVisiting record
+                visiting_obj, created = PersonVisiting.objects.get_or_create(person=person)
+
+                for key, value in visiting_fields.items():
+                    setattr(visiting_obj, key, value)
+
+                visiting_obj.save()
+
+            except Exception as e:
+                return Response({'error': f'Failed to update/create PersonVisiting record: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # ----------- Step 3: Final response -----------
+        if not person_fields and not visiting_fields:
+            return Response({'message': 'No data provided to update or create'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message': 'Person updated and/or PersonVisiting record updated/created successfully'})
 
     def delete(self, request, pk):
         person = self.get_object(pk)
