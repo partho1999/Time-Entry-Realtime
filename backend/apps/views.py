@@ -7,8 +7,9 @@ from .services.main import run_ai_function
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from django.utils import timezone
-from .serializers import PersonSerializer, CameraSerializer
-from .models import Person, Camera, PersonVisiting
+from datetime import timedelta
+from .serializers import PersonSerializer, CameraSerializer, LoginHistorySerializer
+from .models import Person, Camera, PersonVisiting, LoginHistory
 # Face login shared imports
 from .services.face_login.face_login import (
     start_all_camera_threads,
@@ -77,7 +78,7 @@ class PersonDetailAPIView(APIView):
         
         # ----------- Step 2: Update or create PersonVisiting fields -----------
         visiting_fields = {}
-        visiting_field_names = ['visit_start_date', 'visit_end_date', 'visit_reason', 'card_no', 'visit_group', 'respondent']
+        visiting_field_names = ['visit_start_time', 'visit_end_time', 'visit_reason', 'card_no', 'visit_group', 'respondent']
         
         for field in visiting_field_names:
             if field in request.data:
@@ -180,3 +181,40 @@ class FaceLoginAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+
+
+class LoginHistoryCreateAPIView(APIView):
+    # def get(self, request):
+    #     login_history = LoginHistory.objects.all().order_by('-login_time')  # recent first
+    #     serializer = LoginHistorySerializer(login_history, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def get(self, request):
+        login_history = LoginHistory.objects.all().order_by('-login_time')  # recent first
+        serializer = LoginHistorySerializer(login_history, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class LoginHistoryFilteredAPIView(APIView):
+    def get(self, request):
+        filter_type = request.query_params.get('filter')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        queryset = LoginHistory.objects.all()
+
+        # Filter: last 7 or 15 days
+        if filter_type == '7days':
+            start = timezone.now() - timedelta(days=7)
+            queryset = queryset.filter(login_time__gte=start)
+        elif filter_type == '15days':
+            start = timezone.now() - timedelta(days=15)
+            queryset = queryset.filter(login_time__gte=start)
+
+        # Filter: Custom date range
+        elif start_date and end_date:
+            queryset = queryset.filter(login_time__date__gte=start_date, login_time__date__lte=end_date)
+
+        queryset = queryset.order_by('-login_time')
+        serializer = LoginHistorySerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

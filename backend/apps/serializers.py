@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Person, PersonImage, PersonVisiting, Camera 
+from .models import Person, PersonImage, PersonVisiting, Camera, LoginHistory
 
 class PersonImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -113,3 +113,8 @@ class CameraSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'cam_password': {'write_only': True}
         }
+
+class LoginHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoginHistory
+        fields = '__all__'  # or list the fields explicitly
