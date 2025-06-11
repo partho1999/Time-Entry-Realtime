@@ -203,17 +203,24 @@ class LoginHistoryFilteredAPIView(APIView):
 
         queryset = LoginHistory.objects.all()
 
-        # Filter: last 7 or 15 days
-        if filter_type == '7days':
-            start = timezone.now() - timedelta(days=7)
+        now = timezone.now()
+        
+        if filter_type == 'today':
+            queryset = queryset.filter(login_time__date=now.date())
+        
+        elif filter_type == '7days':
+            start = now - timedelta(days=7)
             queryset = queryset.filter(login_time__gte=start)
+        
         elif filter_type == '15days':
-            start = timezone.now() - timedelta(days=15)
+            start = now - timedelta(days=15)
             queryset = queryset.filter(login_time__gte=start)
 
-        # Filter: Custom date range
         elif start_date and end_date:
-            queryset = queryset.filter(login_time__date__gte=start_date, login_time__date__lte=end_date)
+            queryset = queryset.filter(
+                login_time__date__gte=start_date,
+                login_time__date__lte=end_date
+            )
 
         queryset = queryset.order_by('-login_time')
         serializer = LoginHistorySerializer(queryset, many=True, context={'request': request})
