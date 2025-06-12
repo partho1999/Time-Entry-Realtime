@@ -216,6 +216,22 @@ class LoginHistoryFilteredAPIView(APIView):
             start = now - timedelta(days=15)
             queryset = queryset.filter(login_time__gte=start)
 
+        elif filter_type == '30days':
+            start = now - timedelta(days=30)
+            queryset = queryset.filter(login_time__gte=start)
+
+        elif filter_type == '60days':
+            start = now - timedelta(days=60)
+            queryset = queryset.filter(login_time__gte=start)
+
+        elif filter_type == '6months':
+            start = now - timedelta(days=6 * 30)
+            queryset = queryset.filter(login_time__gte=start)
+
+        elif filter_type == '1year':
+            start = now - timedelta(days=365)
+            queryset = queryset.filter(login_time__gte=start)
+
         elif start_date and end_date:
             queryset = queryset.filter(
                 login_time__date__gte=start_date,
