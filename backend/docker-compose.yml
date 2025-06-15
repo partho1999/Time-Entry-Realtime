@@ -1,29 +1,46 @@
-version: "3.9"
-
 services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: gunicorn timeEntry.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_DB_NAME: ${DJANGO_DB_NAME:-postgres}
+      DJANGO_DB_USER: ${DJANGO_DB_USER:-postgres}
+      DJANGO_DB_PASSWORD: ${DJANGO_DB_PASSWORD:-postgres}
+      DJANGO_DB_HOST: ${DJANGO_DB_HOST:-db}
+      DJANGO_DB_PORT: ${DJANGO_DB_PORT:-5432}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-r1sttpb$u1!gh@c(*l58b5n_l^p+d=^%blcf0jw!3pz+6@(uuc}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+    depends_on:
+      - db
+    networks:
+      - app_network
+
   db:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: LZXLILmZsYNDgWknYlcH5juY8Ikj4AHD5Hog6ltic0mpWdQDB8b0yjpeJgNsPxxP
-
-  web:
-    build: .
-    command: uvicorn timeEntry.asgi:application --host 0.0.0.0 --port 8000
-    volumes:
-      - .:/app
+      POSTGRES_DB: ${DJANGO_DB_NAME:-postgres}
+      POSTGRES_USER: ${DJANGO_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DJANGO_DB_PASSWORD:-postgres}
     ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    environment:
-      - DB_NAME=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=LZXLILmZsYNDgWknYlcH5juY8Ikj4AHD5Hog6ltic0mpWdQDB8b0yjpeJgNsPxxP
-      - DB_HOST=69.16.202.101
+      - "5432:5432"
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  app_network:
+    driver: bridge
