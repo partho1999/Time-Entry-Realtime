@@ -10,23 +10,27 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load .env file
+load_dotenv(dotenv_path=BASE_DIR / '.env')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-r1sttpb$u1!gh@c(*l58b5n_l^p+d=^%blcf0jw!3pz+6@(uuc'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-r1sttpb$u1!gh@c(*l58b5n_l^p+d=^%blcf0jw!3pz+6@(uuc')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -75,7 +79,7 @@ MIDDLEWARE = [
 CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_HTTPONLY = False     # <== Allow JavaScript to read sessionid
 SESSION_COOKIE_SAMESITE = 'Lax'     # Or 'None' for cross-site (requires HTTPS)
-SESSION_COOKIE_SECURE = True        # Required if you’re using HTTPS
+SESSION_COOKIE_SECURE = os.getenv('DJANGO_COOKIE_SECURE', 'False') == 'True'
 
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -96,14 +100,9 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 # Optional: If your frontend uses 127.0.0.1 instead of localhost:
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React/Vue dev server
-    # "http://127.0.0.1:3000",
-]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = os.getenv('DJANGO_CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',')
+CORS_ALLOW_ALL_ORIGINS = os.getenv('DJANGO_CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
 
 ROOT_URLCONF = 'timeEntry.urls'
 
@@ -130,8 +129,12 @@ WSGI_APPLICATION = 'timeEntry.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DJANGO_DB_NAME', 'timeentry'),
+        'USER': os.getenv('DJANGO_DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DJANGO_DB_HOST', 'localhost'),
+        'PORT': os.getenv('DJANGO_DB_PORT', '5432'),
     }
 }
 

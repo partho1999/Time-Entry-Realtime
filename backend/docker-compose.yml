@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: LZXLILmZsYNDgWknYlcH5juY8Ikj4AHD5Hog6ltic0mpWdQDB8b0yjpeJgNsPxxP
+
+  web:
+    build: .
+    command: uvicorn timeEntry.asgi:application --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=LZXLILmZsYNDgWknYlcH5juY8Ikj4AHD5Hog6ltic0mpWdQDB8b0yjpeJgNsPxxP
+      - DB_HOST=69.16.202.101
+
+volumes:
+  postgres_data:
