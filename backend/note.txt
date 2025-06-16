@@ -1,2 +1,2 @@
 In the same directory as manage.py, run:
-uvicorn timeEntry.asgi:application --host 0.0.0.0 --port 8000
+uvicorn timeEntry.asgi:application --host 0.0.0.0 --port 3042
