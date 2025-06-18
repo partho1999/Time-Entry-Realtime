@@ -68,7 +68,7 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def get_camera(self):
         try:
-            return Camera.objects.get(cam_id=self.camera_id)
+            return Camera.objects.get(id=self.camera_id)
         except Camera.DoesNotExist:
             return None
         except Exception as e:
