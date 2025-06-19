@@ -17,7 +17,9 @@ def get_all_registered_encodings():
     for record in PersonImage.objects.select_related('person').all():
         if record.face_encoding:
             try:
-                encoding_array = np.array(eval(record.face_encoding))  # stored as text
+                # Convert string representation back to list, then to numpy array
+                encoding_list = eval(record.face_encoding)
+                encoding_array = np.array(encoding_list)
                 results.append({
                     "id_no": record.person.id_no,
                     "name": record.person.name,
@@ -25,6 +27,7 @@ def get_all_registered_encodings():
                     "image": record.image
                 })
             except Exception as e:
+                print(f"Error processing face encoding: {e}")
                 continue
     return results
 
@@ -51,10 +54,16 @@ async def process_face_login(frame, cam_id):
         return {"status": "No face detected"}
 
     registered_data = await get_all_registered_encodings()
+    if not registered_data:
+        print("No registered faces found in database")
+        return {"status": "No registered faces found"}
+
     for encoding in face_encodings:
         for reg in registered_data:
-            match = face_recognition.compare_faces([reg["encoding"]], encoding, tolerance=0.45)
+            # Increase tolerance to 0.6 (default face_recognition value)
+            match = face_recognition.compare_faces([reg["encoding"]], encoding, tolerance=0.6)
             if match[0]:
+                print(f"Match found for {reg['name']}")
                 _, jpeg_img = cv2.imencode(".jpg", frame)
                 await log_login_attempt(
                     name=reg["name"],
