@@ -78,10 +78,42 @@ async def process_face_login(frame, cam_id):
     return {"status": "Access Denied"}
 
 async def process_camera_stream(camera):
-    # Placeholder for camera stream processing logic
-    # For example, connect to RTSP and process frames
-    print(f"Processing stream for camera: {camera.cam_name} ({camera.cam_ip})")
-    await asyncio.sleep(1)  # Simulate async work
+    rtsp_url = f"rtsp://{camera.cam_name}:{camera.cam_password}@{camera.cam_ip}/channel=1/subtype=0"
+    print(f"[Camera {camera.cam_id}] Connecting to RTSP stream: {rtsp_url}")
+    loop = asyncio.get_event_loop()
+    cap = await loop.run_in_executor(None, cv2.VideoCapture, rtsp_url)
+    if not cap.isOpened():
+        print(f"[Camera {camera.cam_id}] Failed to open RTSP stream")
+        return
+    frame_queue = asyncio.Queue(maxsize=5)
+
+    async def stream_frames():
+        while True:
+            ret, frame = await loop.run_in_executor(None, cap.read)
+            if not ret:
+                print(f"[Camera {camera.cam_id}] Failed to read frame from RTSP")
+                break
+            # Resize frame to low resolution for real-time streaming
+            frame = await loop.run_in_executor(None, cv2.resize, frame, (320, 240))
+            print(f"[Camera {camera.cam_id}] Streaming frame...")
+            try:
+                frame_queue.put_nowait(frame)
+            except asyncio.QueueFull:
+                pass
+            await asyncio.sleep(0.01)
+
+    async def process_login():
+        while True:
+            frame = await frame_queue.get()
+            login_result = await process_face_login(frame, cam_id=camera.cam_id)
+            print(f"[Camera {camera.cam_id}] Login result: {login_result}")
+            await asyncio.sleep(2)
+
+    try:
+        await asyncio.gather(stream_frames(), process_login())
+    finally:
+        await loop.run_in_executor(None, cap.release)
+        print(f"[Camera {camera.cam_id}] RTSP stream closed")
 
 async def start_all_camera_threads():
     cameras = await sync_to_async(list)(Camera.objects.all())

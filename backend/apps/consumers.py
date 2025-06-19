@@ -67,28 +67,41 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
             return
 
         logger.info("RTSP stream opened successfully")
+        frame_queue = asyncio.Queue(maxsize=5)
+
+        async def stream_frames():
+            try:
+                while True:
+                    ret, frame = await loop.run_in_executor(None, cap.read)
+                    if not ret:
+                        logger.warning("Failed to read frame from RTSP")
+                        break
+                    # Resize frame to low resolution for real-time streaming
+                    frame = await loop.run_in_executor(None, cv2.resize, frame, (320, 240))
+                    _, jpeg_buffer = await loop.run_in_executor(None, cv2.imencode, '.jpg', frame)
+                    await self.send(bytes_data=jpeg_buffer.tobytes())
+                    try:
+                        frame_queue.put_nowait(frame)
+                    except asyncio.QueueFull:
+                        pass  # Drop frame if queue is full
+                    await asyncio.sleep(0.01)  # Higher FPS
+            except Exception as e:
+                logger.exception("Error during streaming:")
+                await self.send(text_data=json.dumps({'error': f'Streaming error: {str(e)}'}))
+
+        async def process_login():
+            try:
+                while True:
+                    frame = await frame_queue.get()
+                    login_result = await process_face_login(frame, cam_id=self.camera.cam_id)
+                    await self.send(text_data=json.dumps(login_result))
+                    await asyncio.sleep(2)  # Throttle login checks
+            except Exception as e:
+                logger.exception("Error during login processing:")
+                await self.send(text_data=json.dumps({'error': f'Login error: {str(e)}'}))
 
         try:
-            while True:
-                ret, frame = await loop.run_in_executor(None, cap.read)
-                if not ret:
-                    logger.warning("Failed to read frame from RTSP")
-                    break
-
-                # Optional: Send live video preview to client (base64 or binary JPEG)
-                _, jpeg_buffer = await loop.run_in_executor(None, cv2.imencode, '.jpg', frame)
-                await self.send(bytes_data=jpeg_buffer.tobytes())
-
-                # Process face login on current frame
-                login_result = await process_face_login(frame, cam_id=self.camera.cam_id)
-                await self.send(text_data=json.dumps(login_result))
-
-                await asyncio.sleep(2)  # Optional throttle
-
-        except Exception as e:
-            logger.exception("Error during streaming:")
-            await self.send(text_data=json.dumps({'error': f'Streaming error: {str(e)}'}))
-
+            await asyncio.gather(stream_frames(), process_login())
         finally:
             await loop.run_in_executor(None, cap.release)
             logger.info("RTSP stream closed")
