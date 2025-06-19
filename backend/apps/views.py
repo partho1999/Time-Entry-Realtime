@@ -11,12 +11,12 @@ from datetime import timedelta
 from .serializers import PersonSerializer, CameraSerializer, LoginHistorySerializer
 from .models import Person, Camera, PersonVisiting, LoginHistory
 # Face login shared imports
-from .services.face_login.face_login import (
-    start_all_camera_threads,
-    process_login,
-    camera_frames,
-    camera_locks
-)
+# from .services.face_login.face_login import (
+#     start_all_camera_threads,
+#     process_login,
+#     camera_frames,
+#     camera_locks
+# )
 from .services.add_cam.add_cam import get_all_cameras
 import time
 
@@ -157,29 +157,29 @@ class CameraDetailAPIView(APIView):
         return Response({'message': 'Camera deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
     
 
-class FaceLoginAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+# class FaceLoginAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        start_all_camera_threads()
-        camera_urls = get_all_cameras()
-        results = []
+#     def get(self, request):
+#         start_all_camera_threads()
+#         camera_urls = get_all_cameras()
+#         results = []
 
-        try:
-            for cam_id in camera_urls:
-                frame = camera_frames.get(cam_id)
-                lock = camera_locks.get(cam_id)
+#         try:
+#             for cam_id in camera_urls:
+#                 frame = camera_frames.get(cam_id)
+#                 lock = camera_locks.get(cam_id)
 
-                if frame is not None and lock is not None:
-                    with lock:
-                        result = process_login(cam_id, frame)
-                        if result:
-                            print(f"[LOGIN] {result}")
-                            results.append(result)
+#                 if frame is not None and lock is not None:
+#                     with lock:
+#                         result = process_login(cam_id, frame)
+#                         if result:
+#                             print(f"[LOGIN] {result}")
+#                             results.append(result)
 
-            return Response({"logins": results})
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+#             return Response({"logins": results})
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=500)
 
 
 

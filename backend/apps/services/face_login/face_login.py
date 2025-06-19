@@ -6,7 +6,9 @@ import numpy as np
 import face_recognition
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
-from apps.models import PersonImage, LoginHistory
+from apps.models import PersonImage, LoginHistory, Camera
+import asyncio
+
 
 
 @sync_to_async
@@ -74,3 +76,17 @@ async def process_face_login(frame, cam_id):
         live_img_bytes=jpeg_img.tobytes()
     )
     return {"status": "Access Denied"}
+
+async def process_camera_stream(camera):
+    # Placeholder for camera stream processing logic
+    # For example, connect to RTSP and process frames
+    print(f"Processing stream for camera: {camera.cam_name} ({camera.cam_ip})")
+    await asyncio.sleep(1)  # Simulate async work
+
+async def start_all_camera_threads():
+    cameras = await sync_to_async(list)(Camera.objects.all())
+    tasks = []
+    for camera in cameras:
+        task = asyncio.create_task(process_camera_stream(camera))
+        tasks.append(task)
+    await asyncio.gather(*tasks)
