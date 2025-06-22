@@ -31,9 +31,10 @@ class PersonImage(models.Model):
             self.image.open()
             image_data = self.image.read()
             self.image_text = base64.b64encode(image_data).decode('utf-8')
-            self.face_encoding = extract_face_encoding(image_data)
-            # DON'T close the file here, leave it open for Django to handle
-            # self.image.close()  <-- REMOVE THIS line
+            # Store face encoding as a string representation of a list
+            encoding = extract_face_encoding(image_data)
+            if encoding is not None:
+                self.face_encoding = str(encoding)
         super().save(*args, **kwargs)
 
     def __str__(self):
