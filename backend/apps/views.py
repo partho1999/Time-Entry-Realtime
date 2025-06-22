@@ -10,14 +10,6 @@ from django.utils import timezone
 from datetime import timedelta
 from .serializers import PersonSerializer, CameraSerializer, LoginHistorySerializer
 from .models import Person, Camera, PersonVisiting, LoginHistory
-# Face login shared imports
-# from .services.face_login.face_login import (
-#     start_all_camera_threads,
-#     process_login,
-#     camera_frames,
-#     camera_locks
-# )
-from .services.add_cam.add_cam import get_all_cameras
 import time
 
 
