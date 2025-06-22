@@ -11,7 +11,7 @@ from collections import defaultdict
 from asyncio import Lock
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
-from apps.models import PersonImage, LoginHistory
+from apps.models import PersonImage, LoginHistory, Camera
 
 # Cache variables
 _registered_encodings = None
@@ -58,10 +58,13 @@ async def refresh_registered_faces():
 def log_login_attempt(name, id_no, cam_id, status, registered_img, live_img_bytes):
     live_img_name = f"live_{uuid.uuid4().hex}.jpg"
     live_file = ContentFile(live_img_bytes, name=live_img_name)
+    cam = Camera.objects.only("cam_position").filter(cam_id=cam_id).first()
+    
     LoginHistory.objects.create(
         name=name,
         id_no=id_no,
         cam_id=cam_id,
+        cam_position= cam.cam_position,
         status=status,
         registered_image=registered_img,
         live_capture=live_file
