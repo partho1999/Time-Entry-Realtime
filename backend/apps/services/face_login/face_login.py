@@ -23,28 +23,16 @@ def load_registered_faces():
     for record in PersonImage.objects.select_related('person').all():
         if record.face_encoding:
             try:
-<<<<<<< HEAD
                 # Safer parsing than eval: assume face_encoding is JSON string of list
                 encoding_list = json.loads(record.face_encoding)
                 encoding_array = np.array(encoding_list).astype('float32')
                 encodings.append(encoding_array)
                 metadata.append({
-=======
-                # Convert string representation back to list, then to numpy array
-                encoding_list = eval(record.face_encoding)
-                encoding_array = np.array(encoding_list)
-                results.append({
->>>>>>> 554335878d3fd49dba55303e7d316642c605128d
                     "id_no": record.person.id_no,
                     "name": record.person.name,
                     "image": record.image
                 })
-<<<<<<< HEAD
             except Exception:
-=======
-            except Exception as e:
-                print(f"Error processing face encoding: {e}")
->>>>>>> 554335878d3fd49dba55303e7d316642c605128d
                 continue
     if encodings:
         _registered_encodings = np.vstack(encodings)
@@ -85,7 +73,6 @@ async def process_face_login(frame, cam_id, threshold=0.45):
     if not face_encodings:
         return {"status": "No face detected"}
 
-<<<<<<< HEAD
     for encoding in face_encodings:
         encoding_np = np.array(encoding).astype('float32').reshape(1, -1)
         distances, indices = _faiss_index.search(encoding_np, k=1)
@@ -94,19 +81,6 @@ async def process_face_login(frame, cam_id, threshold=0.45):
             dist = distances[0][0]
             if dist < threshold * threshold:  # FAISS returns squared L2 distance
                 reg = _registered_metadata[idx]
-=======
-    registered_data = await get_all_registered_encodings()
-    if not registered_data:
-        print("No registered faces found in database")
-        return {"status": "No registered faces found"}
-
-    for encoding in face_encodings:
-        for reg in registered_data:
-            # Increase tolerance to 0.6 (default face_recognition value)
-            match = face_recognition.compare_faces([reg["encoding"]], encoding, tolerance=0.6)
-            if match[0]:
-                print(f"Match found for {reg['name']}")
->>>>>>> 554335878d3fd49dba55303e7d316642c605128d
                 _, jpeg_img = cv2.imencode(".jpg", frame)
                 await log_login_attempt(
                     name=reg["name"],
