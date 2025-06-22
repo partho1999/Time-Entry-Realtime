@@ -17,6 +17,7 @@ class Migration(migrations.Migration):
                 ('id_no', models.CharField(max_length=100)),
                 ('name', models.CharField(max_length=100)),
                 ('cam_id', models.CharField(max_length=100)),
+                ('cam_position', models.CharField(default='Local PC', max_length=100)),
                 ('registered_image', models.ImageField(upload_to='registered_images/')),
                 ('live_capture', models.ImageField(upload_to='live_captures/')),
                 ('status', models.CharField(choices=[('Granted', 'Granted'), ('Denied', 'Denied')], max_length=20)),

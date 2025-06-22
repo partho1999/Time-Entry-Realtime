@@ -6,6 +6,9 @@ import numpy as np
 import face_recognition
 import faiss
 import json
+import time
+from collections import defaultdict
+from asyncio import Lock
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from apps.models import PersonImage, LoginHistory
@@ -14,6 +17,10 @@ from apps.models import PersonImage, LoginHistory
 _registered_encodings = None
 _registered_metadata = None
 _faiss_index = None
+cache_lock = Lock()
+_last_seen = defaultdict(float)  # For cooldowns
+
+COOLDOWN_SECONDS = 5  # Per person per camera cooldown
 
 @sync_to_async
 def load_registered_faces():
@@ -23,7 +30,6 @@ def load_registered_faces():
     for record in PersonImage.objects.select_related('person').all():
         if record.face_encoding:
             try:
-                # Safer parsing than eval: assume face_encoding is JSON string of list
                 encoding_list = json.loads(record.face_encoding)
                 encoding_array = np.array(encoding_list).astype('float32')
                 encodings.append(encoding_array)
@@ -37,15 +43,16 @@ def load_registered_faces():
     if encodings:
         _registered_encodings = np.vstack(encodings)
         _registered_metadata = metadata
-        _faiss_index = faiss.IndexFlatL2(_registered_encodings.shape[1])  # L2 distance
+        _faiss_index = faiss.IndexFlatL2(_registered_encodings.shape[1])
         _faiss_index.add(_registered_encodings)
     else:
-        _registered_encodings = np.empty((0, 128), dtype='float32')  # face_recognition encodings are 128 dim
+        _registered_encodings = np.empty((0, 128), dtype='float32')
         _registered_metadata = []
         _faiss_index = None
 
 async def refresh_registered_faces():
-    await load_registered_faces()
+    async with cache_lock:
+        await load_registered_faces()
 
 @sync_to_async
 def log_login_attempt(name, id_no, cam_id, status, registered_img, live_img_bytes):
@@ -59,6 +66,14 @@ def log_login_attempt(name, id_no, cam_id, status, registered_img, live_img_byte
         registered_image=registered_img,
         live_capture=live_file
     )
+
+def should_log(id_no, cam_id, cooldown=COOLDOWN_SECONDS):
+    key = f"{id_no}_{cam_id}"
+    now = time.time()
+    if now - _last_seen[key] > cooldown:
+        _last_seen[key] = now
+        return True
+    return False
 
 async def process_face_login(frame, cam_id, threshold=0.45):
     global _faiss_index, _registered_metadata
@@ -79,20 +94,25 @@ async def process_face_login(frame, cam_id, threshold=0.45):
         if indices.size > 0:
             idx = indices[0][0]
             dist = distances[0][0]
-            if dist < threshold * threshold:  # FAISS returns squared L2 distance
+            if dist < threshold * threshold:
                 reg = _registered_metadata[idx]
-                _, jpeg_img = cv2.imencode(".jpg", frame)
-                await log_login_attempt(
-                    name=reg["name"],
-                    id_no=reg["id_no"],
-                    cam_id=cam_id,
-                    status="Granted",
-                    registered_img=reg["image"],
-                    live_img_bytes=jpeg_img.tobytes()
-                )
-                return {"status": "Access Granted", "name": reg["name"], "id_no": reg["id_no"]}
+                if should_log(reg["id_no"], cam_id):
+                    _, jpeg_img = cv2.imencode(".jpg", frame)
+                    await log_login_attempt(
+                        name=reg["name"],
+                        id_no=reg["id_no"],
+                        cam_id=cam_id,
+                        status="Granted",
+                        registered_img=reg["image"],
+                        live_img_bytes=jpeg_img.tobytes()
+                    )
+                return {
+                    "status": "Access Granted",
+                    "name": reg["name"],
+                    "id_no": reg["id_no"],
+                    "distance": float(dist)
+                }
 
-    # No match found
     _, jpeg_img = cv2.imencode(".jpg", frame)
     await log_login_attempt(
         name="Unknown",
@@ -103,4 +123,3 @@ async def process_face_login(frame, cam_id, threshold=0.45):
         live_img_bytes=jpeg_img.tobytes()
     )
     return {"status": "Access Denied"}
-

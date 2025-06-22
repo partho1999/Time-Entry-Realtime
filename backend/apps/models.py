@@ -69,12 +69,13 @@ class LoginHistory(models.Model):
     id_no = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     cam_id = models.CharField(max_length=100)
+    cam_position = models.CharField(max_length=100,  default="Local PC")
     registered_image = models.ImageField(upload_to='registered_images/')
     live_capture = models.ImageField(upload_to='live_captures/')
     status = models.CharField(max_length=20, choices=[('Granted', 'Granted'), ('Denied', 'Denied')])
     login_time = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
 
 
