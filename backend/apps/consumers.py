@@ -5,7 +5,7 @@ import json
 import asyncio
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from apps.models import Camera
+from apps.models import Camera, LoginHistory
 from apps.services.face_login.face_login import process_face_login
 from apps.services.camera_utils.camera_utils import build_rtsp_url
 import logging
@@ -112,3 +112,19 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.exception("Login processing error:")
             await self.send(json.dumps({'error': f'Login error: {str(e)}'}))
+
+class LoginHistoryCountConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        while True:
+            count = await self.get_login_history_count()
+            await self.send(json.dumps({'count': count}))
+            await asyncio.sleep(1)
+
+    async def disconnect(self, close_code):
+        pass
+
+    @staticmethod
+    @sync_to_async
+    def get_login_history_count():
+        return LoginHistory.objects.count()

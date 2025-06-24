@@ -110,7 +110,7 @@ class CameraCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cameras = Camera.objects.all()
+        cameras = Camera.objects.all().order_by('id')
         serializer = CameraSerializer(cameras, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -233,3 +233,8 @@ class LoginHistoryFilteredAPIView(APIView):
         queryset = queryset.order_by('-login_time')
         serializer = LoginHistorySerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class LoginHistoryCountAPIView(APIView):
+    def get(self, request):
+        count = LoginHistory.objects.count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
